@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Master file - import migrations in order, never reorder these -->
+    <include file="classpath:db/changelog/migrations/V001__create_ai_chat_memory_table.sql"/>
+    <include file="classpath:db/changelog/migrations/V002__add_sequence_id_to_ai_chat_memory.sql"/>
+
+</databaseChangeLog>
+

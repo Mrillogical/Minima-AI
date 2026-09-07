@@ -1,0 +1,365 @@
+﻿api:
+  prefix: /api/v1
+
+spring:
+  application:
+    name: ai-service
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: true
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:minima-AI_ai}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    hikari:
+      maximum-pool-size: 8
+      minimum-idle: 3
+      connection-timeout: 30000
+    connection-fetch: lazy
+
+  ai:
+    openai:
+      api-key: ${GROQ_API_KEY:}
+      base-url: ${GROQ_BASE_URL:https://api.groq.com/openai}
+      chat:
+        model: ${GROQ_MODEL:openai/gpt-oss-120b}
+        temperature: ${GROQ_TEMPERATURE:0.3}
+        max-tokens: ${GROQ_MAX_TOKENS:100}
+    chat:
+      client:
+        observations:
+          log-prompt: false
+          log-completion: true
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: never
+
+    mcp:
+      server:
+        enabled: true
+        name: minima-AI-mcp-server
+        version: 1.0.0
+        protocol: STREAMABLE
+        type: sync
+        annotation-scanner:
+          enabled: true
+        capabilities:
+          completion: true
+          prompt: true
+          resource: true
+          tool: true
+        request-timeout: 50s
+        instructions: |
+          minima-AI URL management server, scoped to the authenticated user only.
+          Tools mutate/query URL and analytics state (shorten-url, get-url-details,
+          get-url-stats, get-top-urls, delete-url). Resources (shortly://urls,
+          shortly://url/{slug}, shortly://analytics/top-urls) expose read-only
+          ambient context without a tool call - prefer resources over tools when
+          you just need to look something up, not act on it. Prompts (analyze-url,
+          performance-summary) pre-fill real user data into a ready-to-reason prompt.
+
+  # Redis - MCP API key validation (McpKeyFilter reads mcp:key:{hash} â†’ userId)
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:redis123}
+
+  kafka:
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true
+
+    topics:
+      url-created: ${URL_CREATED_EVENT:url.created}
+      url-classified: ${URL_CLASSIFIED_EVENT:url.classified}
+
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        max.block.ms: 3000          # fail fast if Kafka unreachable (default 60s blocks HTTP)
+        retries: 3
+        retry.backoff.ms: 1000
+
+    consumer:
+      group-id: ai-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+      properties:
+        reconnect.backoff.ms: 1000
+        reconnect.backoff.max.ms: 10000
+
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: 8084
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus, info
+
+  health:
+    circuitbreakers:
+      enabled: true   # CB state shows in /actuator/health
+
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+  tracing:
+    sampling:
+      probability: 1.0        # 100% in dev, drop to 0.1 in prod
+
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: http://otel-collector:4318/v1/traces
+
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+logging:
+  level:
+    root: info
+    com.minima-AI: DEBUG
+    org.springframework.ai: DEBUG
+    org.apache.kafka.common.config: OFF
+
+tavily:
+  api:
+    key: ${TAVILY_API_KEY}
+    base-url: https://api.tavily.com
+
+services:
+  url-service:
+    base-url: ${URL_SERVICE_BASE_URL:http://localhost:8082}
+  analytics-service:
+    base-url: ${ANALYTICS_SERVICE_BASE_URL:http://localhost:8083}
+
+eureka:
+  client:
+    service-url:
+      # EUREKA_URL overridden to http://eureka-server:8761/eureka/ in Docker Compose
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    registry-fetch-interval-seconds: 10  # refresh instance list every 10s (default 30)
+  instance:
+    prefer-ip-address: true                  # register with IP not hostname â€” required in Docker
+    lease-renewal-interval-in-seconds: 10    # heartbeat every 10s (default 30)
+    lease-expiration-duration-in-seconds: 30 # Eureka marks dead after 30s no heartbeat
+
+resilience4j:
+  bulkhead:
+    instances:
+      url-service:
+        maxConcurrentCalls: 50
+        maxWaitDuration: 0
+      analytics-service:
+        maxConcurrentCalls: 50
+        maxWaitDuration: 0
+      ai-service:
+        maxConcurrentCalls: 20
+        maxWaitDuration: 0
+      ai-agent:
+        maxConcurrentCalls: 15
+        maxWaitDuration: 0
+      webSearch:
+        maxConcurrentCalls: 10
+        maxWaitDuration: 0
+    metrics:
+      enabled: true
+
+  timelimiter:
+    instances:
+      url-service:
+        timeout-duration: 30s
+        cancel-running-future: false
+
+      analytics-service:
+        timeout-duration: 30s
+        cancel-running-future: false
+
+      ai-service:
+        timeout-duration: 30s
+        cancel-running-future: false
+
+      ai-agent:
+        timeout-duration: 45s   # allows for multistep tool-calling, not just one completion
+        cancel-running-future: false
+
+      webSearch:
+        timeoutDuration: 30s
+        cancelRunningFuture: false
+      safetyCheck:
+        timeoutDuration: 30s
+        cancelRunningFuture: false
+      classification:
+        timeoutDuration: 30s
+        cancelRunningFuture: false
+
+  circuitbreaker:
+    instances:
+      ai-service:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        slowCallDurationThreshold: 15s
+        slowCallRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        # 4xx (not found, conflict) - rethrow untouched, no fallback,
+        # doesn't count toward circuit stats
+        ignoreExceptions:
+          - org.springframework.web.client.HttpClientErrorException
+        # connection issues + 5xx - count toward circuit state, trigger fallback
+        recordExceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+          - java.util.concurrent.TimeoutException
+
+      url-service:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        slowCallDurationThreshold: 2s
+        slowCallRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        # 4xx (not found, conflict) - rethrow untouched, no fallback,
+        # doesn't count toward circuit stats
+        ignoreExceptions:
+          - org.springframework.web.client.HttpClientErrorException
+        # connection issues + 5xx - count toward circuit state, trigger fallback
+        recordExceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+          - java.util.concurrent.TimeoutException
+
+      analytics-service:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        slowCallDurationThreshold: 2s
+        slowCallRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        ignoreExceptions:
+          - org.springframework.web.client.HttpClientErrorException
+        recordExceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+          - java.util.concurrent.TimeoutException
+
+      ai-agent:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        slowCallDurationThreshold: 40s   # a bit under the 45s timelimiter, catches "slow" before "hung"
+        slowCallRateThreshold: 50
+
+      webSearch:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        slowCallDurationThreshold: 2s
+        waitDurationInOpenState: 20s
+      safetyCheck:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        slowCallDurationThreshold: 2s
+        waitDurationInOpenState: 20s
+      classification:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        slowCallDurationThreshold: 2s
+        waitDurationInOpenState: 20s
+
+  retry:
+    instances:
+      url-service:
+        maxAttempts: 3
+        waitDuration: 500ms
+        retryExceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+
+      analytics-service:
+        maxAttempts: 3
+        waitDuration: 500ms
+        retryExceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+
+      ai-service:
+        maxAttempts: 3
+        waitDuration: 500ms
+        retryExceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+
+      ai-agent:
+        maxAttempts: 2
+        waitDuration: 500ms
+        retryExceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+
+      webSearch:
+        maxAttempts: 2
+        waitDuration: 500ms
+        retryExceptions:
+          - org.springframework.web.client.ResourceAccessException   # connect timeout, connection refused, DNS failure
+          - java.io.IOException                                       # network-level transient errors
+          - org.springframework.web.client.HttpServerErrorException  # Brave 5xx - their side is having issues, worth retrying
+        ignoreExceptions:
+          - org.springframework.web.client.HttpClientErrorException  # Brave 4xx - bad key (401), bad query (400)
+      safetyCheck:
+        maxAttempts: 2
+        waitDuration: 500ms
+        retryExceptions:
+          - java.util.concurrent.TimeoutException
+
+      classification:
+        maxAttempts: 2
+        waitDuration: 500ms
+        retryExceptions:
+          - java.util.concurrent.TimeoutException
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+

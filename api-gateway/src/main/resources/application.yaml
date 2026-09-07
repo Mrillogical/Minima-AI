@@ -1,0 +1,249 @@
+﻿api:
+  prefix: /api/v1
+
+spring:
+  application:
+    name: api-gateway  # service name shown in logs + actuator
+
+  reactor:
+    context-propagation: AUTO
+
+  threads:
+    virtual:
+      enabled: true
+
+  # Redis - rate limiting storage
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}   # env var with fallback for local dev
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:redis123}
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: auth-service
+              uri: lb://auth-service        # lb:// = load balanced via Eureka
+              predicates:
+                - Path=/api/v1/auth/**,/oauth2/**,/login/oauth2/**
+
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: authServiceCB
+                    fallbackUri: forward:/fallback/auth-service
+
+            - id: auth-service-docs
+              uri: lb://auth-service
+              predicates:
+                - Path=/v3/api-docs/auth-service
+              filters:
+                - RewritePath=/v3/api-docs/auth-service, /v3/api-docs
+
+            - id: url-service
+              uri: lb://url-service
+              predicates:
+                - Path=/api/v1/urls/**
+
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: urlServiceCB
+                    fallbackUri: forward:/fallback/url-service
+
+            - id: url-redirect-api
+              uri: lb://url-service         # redirect uses same service as url
+              predicates:
+                - Path=/r/{slug}
+
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: urlServiceCB
+                    fallbackUri: forward:/fallback/url-service
+
+            - id: url-service-docs
+              uri: lb://url-service
+              predicates:
+                - Path=/v3/api-docs/url-service
+              filters:
+                - RewritePath=/v3/api-docs/url-service, /v3/api-docs
+
+            - id: analytics-service
+              uri: lb://analytics-service
+              predicates:
+                - Path=/api/v1/analytics/**
+
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: analyticsServiceCB
+                    fallbackUri: forward:/fallback/analytics-service
+
+            - id: analytics-service-docs
+              uri: lb://analytics-service
+              predicates:
+                - Path=/v3/api-docs/analytics-service
+              filters:
+                - RewritePath=/v3/api-docs/analytics-service, /v3/api-docs
+
+            - id: ai-service
+              uri: lb://ai-service
+              predicates:
+                - Path=/api/v1/ai/**
+
+              metadata:
+                response-timeout: 35000
+                connection-timeout: 2000
+
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: aiServiceCB
+                    fallbackUri: forward:/fallback/ai-service
+
+            - id: ai-service-docs
+              uri: lb://ai-service
+              predicates:
+                - Path=/v3/api-docs/ai-service
+              filters:
+                - RewritePath=/v3/api-docs/ai-service, /v3/api-docs
+
+            - id: mcp-server
+              uri: lb://ai-service
+              predicates:
+                - Path=/mcp, /mcp/**
+              metadata:
+                response-timeout: 35000
+                connection-timeout: 10000
+
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: aiServiceCB
+                    fallbackUri: forward:/fallback/ai-service
+
+            - id: url-redirect
+              uri: lb://url-service         # redirect uses same service as url
+              predicates:
+                - Path=/r/{slug}
+
+              filters:
+                - RewritePath=/r/(?<slug>.*), /api/v1/r/${slug}
+                - name: CircuitBreaker
+                  args:
+                    name: urlServiceCB
+                    fallbackUri: forward:/fallback/url-service
+
+          httpclient:
+            connect-timeout: 2000
+            response-timeout: 5s
+
+# Gateway also registers with Eureka - not strictly needed but consistent
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    registry-fetch-interval-seconds: 10
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+server:
+  port: 8080  # single entry point - all clients hit this port only
+
+# JWT secret - gateway validates token before routing to any service
+jwt:
+  secret: ${JWT_SECRET:dev-secret-key-change-in-prod-must-be-256-bits}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+
+# Actuator â€” expose health + prometheus metrics endpoint
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus, info
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5,0.9,0.95,0.99
+
+  tracing:
+    sampling:
+      probability: 0.1   # 1.0 in dev, set to 0.1 in prod
+
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: http://otel-collector:4318/v1/traces
+
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+logging:
+  level:
+    root: info
+    com.minima-AI: DEBUG  # verbose for our code only
+
+# Per-service rate limits
+# auth: strict - /login is brute-force target
+# AI: very strict - each call hits LLM, expensive
+# analytics: lenient - read-only stats endpoints
+rate-limit:
+  routes:
+    auth:
+      replenish-rate: 3
+      burst-capacity: 5
+      requested-tokens: 1
+    url:
+      replenish-rate: 10
+      burst-capacity: 20
+      requested-tokens: 1
+    analytics:
+      replenish-rate: 20
+      burst-capacity: 40
+      requested-tokens: 1
+    ai:
+      replenish-rate: 2
+      burst-capacity: 3
+      requested-tokens: 1
+    mcp:
+      replenish-rate: 5
+      burst-capacity: 10
+      requested-tokens: 1
+    default:
+      replenish-rate: 5
+      burst-capacity: 10
+      requested-tokens: 1
+
+# Swagger config
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Auth Service
+        url: /v3/api-docs/auth-service
+      - name: URL Service
+        url: /v3/api-docs/url-service
+      - name: Analytics Service
+        url: /v3/api-docs/analytics-service
+      - name: AI Service
+        url: /v3/api-docs/ai-service
+

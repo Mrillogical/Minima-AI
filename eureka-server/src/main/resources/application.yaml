@@ -1,0 +1,30 @@
+﻿server:
+  port: ${EUREKA_PORT:8761}  # standard Eureka port â€” dashboard at http://localhost:8761
+
+spring:
+  application:
+    name: eureka-server
+
+eureka:
+  instance:
+    hostname: ${EUREKA_HOSTNAME:localhost}
+  client:
+    register-with-eureka: false  # server doesn't register itself
+    fetch-registry: false        # server doesn't fetch from itself
+    service-url:
+      defaultZone: http://${EUREKA_HOSTNAME:localhost}:${EUREKA_PORT:8761}/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.netflix.eureka: WARN      # noisy by default â€” suppress
+    com.netflix.discovery: WARN
+

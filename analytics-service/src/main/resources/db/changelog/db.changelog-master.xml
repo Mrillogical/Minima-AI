@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <include file="db/changelog/migrations/V001__create_analytics_tables.sql"/>
+    <include file="db/changelog/migrations/V002__fix_click_hourly_url_id.sql"/>
+    <include file="db/changelog/migrations/V003__add_click_events_user_id.sql"/>
+    <include file="db/changelog/migrations/V004__create_url_owners.sql"/>
+
+</databaseChangeLog>
+

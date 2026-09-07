@@ -1,0 +1,188 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- â”€â”€ PARENT: Spring Boot BOM â€” imports all Spring version pins â”€â”€ -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.1.0</version>
+    <relativePath/> <!-- fetch from Maven Central, not local path -->
+  </parent>
+
+  <!-- â”€â”€ THIS artifact is the multi-module root (packaging = pom, not jar) â”€â”€ -->
+  <groupId>com.minima-AI</groupId>
+  <artifactId>minima-AI</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>minima-AI</name>
+
+  <!-- â”€â”€ 5 child modules â€” Maven builds them in this order â”€â”€ -->
+  <modules>
+    <module>eureka-server</module>
+    <module>api-gateway</module>
+    <module>auth-service</module>
+    <module>url-service</module>
+    <module>analytics-service</module>
+    <module>ai-service</module>
+  </modules>
+
+  <!-- â”€â”€ All version numbers live here â€” change once, applies everywhere â”€â”€ -->
+  <properties>
+    <java.version>25</java.version>
+    <spring-cloud.version>2025.1.2</spring-cloud.version>
+    <spring-ai.version>2.0.0</spring-ai.version>
+    <jjwt.version>0.12.6</jjwt.version>
+    <resilience4j.version>2.2.0</resilience4j.version>
+    <shedlock.version>6.0.1</shedlock.version>
+    <liquibase.version>4.29.0</liquibase.version>
+    <micrometer-tracing.version>1.4.0</micrometer-tracing.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <!-- â”€â”€ dependencyManagement: pins versions but does NOT add to classpath.
+       Children opt-in by declaring the dep WITHOUT a version tag. â”€â”€ -->
+  <dependencyManagement>
+    <dependencies>
+
+      <!-- Spring Cloud BOM â€” Gateway, OpenFeign, Circuit Breaker versions -->
+      <!-- ADD this â€” actual BOM import, manages ALL Spring Cloud versions -->
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-dependencies</artifactId>
+        <version>${spring-cloud.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <!-- Spring AI BOM â€” all AI starter versions -->
+      <dependency>
+        <groupId>org.springframework.ai</groupId>
+        <artifactId>spring-ai-bom</artifactId>
+        <version>${spring-ai.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <!-- JWT â€” token creation + validation -->
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-api</artifactId>
+        <version>${jjwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-impl</artifactId>
+        <version>${jjwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-jackson</artifactId>
+        <version>${jjwt.version}</version>
+      </dependency>
+
+      <!-- Resilience4j â€” circuit breaker + retry, used by ai-service and api-gateway (via spring-cloud-starter-circuitbreaker-reactor-resilience4j) -->
+      <dependency>
+        <groupId>io.github.resilience4j</groupId>
+        <artifactId>resilience4j-circuitbreaker</artifactId>
+        <version>${resilience4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.resilience4j</groupId>
+        <artifactId>resilience4j-retry</artifactId>
+        <version>${resilience4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.resilience4j</groupId>
+        <artifactId>resilience4j-timelimiter</artifactId>
+        <version>${resilience4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.resilience4j</groupId>
+        <artifactId>resilience4j-micrometer</artifactId>
+        <version>${resilience4j.version}</version>
+      </dependency>
+
+      <!-- ShedLock â€” prevents scheduled jobs running on multiple instances -->
+      <dependency>
+        <groupId>net.javacrumbs.shedlock</groupId>
+        <artifactId>shedlock-spring</artifactId>
+        <version>${shedlock.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.javacrumbs.shedlock</groupId>
+        <artifactId>shedlock-provider-redis-spring</artifactId>
+        <version>${shedlock.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <!-- â”€â”€ dependencies here go to ALL 5 services â€” keep minimal â”€â”€ -->
+  <dependencies>
+
+      <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-opentelemetry</artifactId>
+      </dependency>
+
+    <!-- Lombok â€” @Slf4j, @Builder, etc. (records replace most of this) -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <optional>true</optional> <!-- not leaked to downstream deps -->
+    </dependency>
+
+    <!-- JUnit 5 + Mockito â€” every service needs tests -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <!-- pluginManagement: pins plugin versions, children inherit without re-declaring -->
+    <pluginManagement>
+      <plugins>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <source>${java.version}</source>
+            <target>${java.version}</target>
+            <compilerArgs>
+              <arg>--enable-preview</arg>
+            </compilerArgs>
+
+            <!-- ADD THIS â€” explicitly tells the compiler to run Lombok's processor.
+                 Required when -enable-preview is active. Without this block,
+                 Maven skips classpath processor discovery and @Slf4j never runs. -->
+            <annotationProcessorPaths>
+              <path>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <!-- lombok.version is already pinned by Spring Boot BOM â€” reuse it -->
+                <version>${lombok.version}</version>
+              </path>
+            </annotationProcessorPaths>
+
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+
+      </plugins>
+    </pluginManagement>
+  </build>
+
+</project>
+

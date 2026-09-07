@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Import Spring Boot's default base config (color, levels) -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- ============================================================
+         DEV PROFILE â€” human-readable console output
+         Active when: spring.profiles.active != prod
+    ============================================================ -->
+    <springProfile name="!prod">
+
+        <!-- ========================================================
+             RAW APPENDERS (actual I/O)
+        ========================================================= -->
+
+        <appender name="CONSOLE_RAW" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{ISO8601, Asia/Kolkata} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <appender name="FILE_RAW" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>logs/analytics-service.log</file>
+
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>logs/analytics-service.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                <maxFileSize>10MB</maxFileSize>
+                <maxHistory>7</maxHistory>
+                <totalSizeCap>500MB</totalSizeCap>
+            </rollingPolicy>
+
+            <encoder>
+                <pattern>%d{ISO8601, Asia/Kolkata} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <!-- ========================================================
+             ASYNC WRAPPERS
+        ========================================================= -->
+
+        <appender name="CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+            <queueSize>1024</queueSize>
+            <neverBlock>true</neverBlock>
+            <includeCallerData>false</includeCallerData>
+            <appender-ref ref="CONSOLE_RAW"/>
+        </appender>
+
+        <appender name="FILE" class="ch.qos.logback.classic.AsyncAppender">
+            <queueSize>1024</queueSize>
+            <neverBlock>true</neverBlock>
+            <includeCallerData>false</includeCallerData>
+            <appender-ref ref="FILE_RAW"/>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+
+        <!-- DEBUG for our own code only -->
+        <logger name="com.minima-AI" level="DEBUG"/>
+
+    </springProfile>
+
+    <!-- ============================================================
+         PROD PROFILE â€” structured JSON for Loki/Grafana ingestion
+         Active when: spring.profiles.active=prod
+    ============================================================ -->
+    <springProfile name="prod">
+
+        <!-- ========================================================
+             RAW APPENDERS (actual I/O)
+        ========================================================= -->
+
+        <appender name="JSON_CONSOLE_RAW" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"service":"analytics-service"}</customFields>
+                <includeMdcKeyName>traceId</includeMdcKeyName>
+                <includeMdcKeyName>spanId</includeMdcKeyName>
+            </encoder>
+        </appender>
+
+        <appender name="FILE_RAW" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>logs/analytics-service.log</file>
+
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>logs/analytics-service.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                <maxFileSize>10MB</maxFileSize>
+                <maxHistory>7</maxHistory>
+                <totalSizeCap>500MB</totalSizeCap>
+            </rollingPolicy>
+
+            <encoder>
+                <pattern>%d{ISO8601, Asia/Kolkata} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <!-- ========================================================
+             ASYNC WRAPPERS
+        ========================================================= -->
+
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+            <queueSize>1024</queueSize>
+            <neverBlock>true</neverBlock>
+            <includeCallerData>false</includeCallerData>
+            <appender-ref ref="JSON_CONSOLE_RAW"/>
+        </appender>
+
+        <appender name="FILE" class="ch.qos.logback.classic.AsyncAppender">
+            <queueSize>1024</queueSize>
+            <neverBlock>true</neverBlock>
+            <includeCallerData>false</includeCallerData>
+            <appender-ref ref="FILE_RAW"/>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+
+        <logger name="com.minima-AI" level="INFO"/>
+
+    </springProfile>
+
+</configuration>
+

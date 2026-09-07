@@ -1,0 +1,51 @@
+﻿server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: api-gateway
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: minima-AI
+          service: api-gateway
+          __path__: /app/api-gateway/logs/*.log
+
+  - job_name: auth-service
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: minima-AI
+          service: auth-service
+          __path__: /app/auth-service/logs/*.log
+
+  - job_name: url-service
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: minima-AI
+          service: url-service
+          __path__: /app/url-service/logs/*.log
+
+  - job_name: analytics-service
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: minima-AI
+          service: analytics-service
+          __path__: /app/analytics-service/logs/*.log
+
+  - job_name: ai-service
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: minima-AI
+          service: ai-service
+          __path__: /app/ai-service/logs/*.log
+
