@@ -1,11 +1,11 @@
-﻿# ðŸ”— Minima-AI
+# 🔗 Minima-AI
 
 **A production-grade URL shortener built as a Java 25 / Spring Boot 4.1 microservices platform with a built-in AI agent you can just *talk* to, and an MCP server so Claude can manage your links directly.**
 
 > Most URL shortener projects are a single Spring Boot app with one table.
 > This one is six independently deployable services with service discovery, circuit breakers, a full LGTM observability stack (metrics + logs + distributed traces), an LLM-powered ReAct agent that can shorten, inspect, analyze, and delete your links through plain English, and a native MCP server so Claude Desktop can do the same - all spun up with a single `docker compose up`.
 
-â­ **If this saves you a weekend of wiring microservices together, a star helps a lot and tells me to keep building.**
+⭐ **If this saves you a weekend of wiring microservices together, a star helps a lot and tells me to keep building.**
 
 [![Java](https://img.shields.io/badge/Java-25-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](#)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F?style=flat-square&logo=springboot&logoColor=white)](#)
@@ -23,38 +23,38 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](#)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-## ðŸŽ¬ Demo
+## 🎬 Demo
 
 > Claude AI MCP walkthrough
 
-![minima-AI_mcp.gif](docs/MCP.gif)
+![minima-ai_mcp.gif](docs/MCP.gif)
 
 ---
 
-## ðŸ“‘ Table of Contents
+## 📑 Table of Contents
 
 - [Load Test Results](#-load-test-results)
 - [Talk to Your Links (AI Agent)](#-talk-to-your-links)
 - [Use it from Claude Desktop (MCP)](#-use-it-from-claude-desktop-mcp)
-- [Architecture](#ï¸-architecture)
+- [Architecture](#️-architecture)
 - [One Command, Full Stack](#-one-command-full-stack)
 - [API Docs (Swagger)](#-api-docs-swaggeropenapi)
 - [Key Features](#-key-features)
 - [Observability](#-observability)
-- [Resilience](#ï¸-resilience)
-- [Tech Stack](#ï¸-tech-stack)
+- [Resilience](#️-resilience)
+- [Tech Stack](#️-tech-stack)
 - [Services at a Glance](#-services-at-a-glance)
 - [Project Structure](#-project-structure)
-- [Project Status](#ï¸-project-status)
+- [Project Status](#️-project-status)
 - [What's Next](#-whats-next)
 - [Engineering Highlights](#-engineering-highlights)
 - [License](#-license)
 
 ---
 
-## âš¡ Load Test Results
+## ⚡ Load Test Results
 
-Benchmark on the redirect hot path (`GET /r/{slug}`) â€” cache-aside Redis, single local machine running all 17 Docker containers simultaneously. Tested with [k6](https://k6.io), ramping to 200 concurrent virtual users over a realistic 3-stage load profile.
+Benchmark on the redirect hot path (`GET /r/{slug}`) — cache-aside Redis, single local machine running all 17 Docker containers simultaneously. Tested with [k6](https://k6.io), ramping to 200 concurrent virtual users over a realistic 3-stage load profile.
 
 | Metric | Result |
 |---|---|
@@ -78,10 +78,10 @@ All k6 thresholds passed: `checks rate > 0.999`, `p(95) < 80ms`, `p(99) < 150ms`
 
 ```text
 
-         /\      Grafana   /â€¾â€¾/
+         /\      Grafana   /‾‾/
     /\  /  \     |\  __   /  /
-   /  \/    \    | |/ /  /   â€¾â€¾\
-  /          \   |   (  |  (â€¾)  |
+   /  \/    \    | |/ /  /   ‾‾\
+  /          \   |   (  |  (‾)  |
  / __________ \  |_|\_\  \_____/
 
 
@@ -95,31 +95,31 @@ All k6 thresholds passed: `checks rate > 0.999`, `p(95) < 80ms`, `p(99) < 150ms`
 INFO[0006] Seeded 500 slugs                              source=console
 
 
-  â–ˆ THRESHOLDS
+  █ THRESHOLDS
 
     checks
-    âœ“ 'rate>0.999' rate=100.00%
+    ✓ 'rate>0.999' rate=100.00%
 
     http_req_duration
-    âœ“ 'p(95)<80' p(95)=16.84ms
-    âœ“ 'p(99)<150' p(99)=34.6ms
+    ✓ 'p(95)<80' p(95)=16.84ms
+    ✓ 'p(99)<150' p(99)=34.6ms
 
     http_req_failed
-    âœ“ 'rate<0.001' rate=0.00%
+    ✓ 'rate<0.001' rate=0.00%
 
 
-  â–ˆ TOTAL RESULTS
+  █ TOTAL RESULTS
 
     checks_total.......: 334932  2641.508245/s
     checks_succeeded...: 100.00% 334932 out of 334932
     checks_failed......: 0.00%   0 out of 334932
 
-    âœ“ status is 302
-    âœ“ has Location header
+    ✓ status is 302
+    ✓ has Location header
 
     HTTP
-    http_req_duration..............: avg=6.91ms   min=530.8Âµs  med=4.98ms   p(90)=12.35ms  p(95)=16.84ms  p(99)=34.6ms  max=157.55ms
-      { expected_response:true }...: avg=6.91ms   min=530.8Âµs  med=4.98ms   p(90)=12.35ms  p(95)=16.84ms  p(99)=34.6ms  max=157.55ms
+    http_req_duration..............: avg=6.91ms   min=530.8µs  med=4.98ms   p(90)=12.35ms  p(95)=16.84ms  p(99)=34.6ms  max=157.55ms
+      { expected_response:true }...: avg=6.91ms   min=530.8µs  med=4.98ms   p(90)=12.35ms  p(95)=16.84ms  p(99)=34.6ms  max=157.55ms
     http_req_failed................: 0.00%  0 out of 167966
     http_reqs......................: 167966 1324.697472/s
 
@@ -135,16 +135,16 @@ INFO[0006] Seeded 500 slugs                              source=console
 
 
 running (2m06.8s), 000/200 VUs, 167466 complete and 0 interrupted iterations
-realistic_load âœ“ [======================================] 000/200 VUs  2m0s
+realistic_load ✓ [======================================] 000/200 VUs  2m0s
 ```
 
 </details>
 
 ---
 
-## ðŸ¤– Talk to your links
+## 🤖 Talk to your links
 
-minima-AI's standout feature is `ai-service` - a [Spring AI](https://spring.io/projects/spring-ai) ReAct agent that turns plain-English requests into real actions across the platform.
+Minima AI's standout feature is `ai-service` - a [Spring AI](https://spring.io/projects/spring-ai) ReAct agent that turns plain-English requests into real actions across the platform.
 
 ```
 POST /api/v1/ai/agent
@@ -179,7 +179,7 @@ Try also:
 
 ---
 
-## ðŸ”Œ Use it from Claude Desktop (MCP)
+## 🔌 Use it from Claude Desktop (MCP)
 
 `ai-service` doubles as a native **[MCP](https://modelcontextprotocol.io) server**. Point Claude Desktop at it and manage your shortened URLs without leaving the chat window.
 
@@ -198,7 +198,7 @@ You'll get back a `sk_...` key - copy it immediately, it's shown exactly once.
 ```jsonc
 {
   "mcpServers": {
-    "minima-AI": {
+    "minima-ai": {
       "command": "npx",
       "args": [
         "mcp-remote",
@@ -226,25 +226,25 @@ Auth is API-key based (SHA-256 hashed, validated against Redis on every call) ra
 
 ---
 
-## ðŸ—ï¸ Architecture
+## 🏗️ Architecture
 
 ```mermaid
 graph TB
     Client[("Client")]
     Eureka{{"eureka-server :8761<br/>Service Registry"}}
-    Gateway["api-gateway :8080<br/>JWT â€¢ Rate limiting â€¢ Circuit breakers â€¢ Routing"]
+    Gateway["api-gateway :8080<br/>JWT • Rate limiting • Circuit breakers • Routing"]
 
     subgraph Services
         Auth["auth-service :8081<br/>JWT + OAuth2 + Refresh tokens + Password reset"]
-        Url["url-service :8082<br/>Shortening â€¢ Base62 â€¢ Redirects"]
-        Analytics["analytics-service :8083<br/>Click tracking â€¢ Bloom filter"]
-        AI["ai-service :8084<br/>ReAct agent â€¢ MCP server â€¢ Classification â€¢ Safety"]
+        Url["url-service :8082<br/>Shortening • Base62 • Redirects"]
+        Analytics["analytics-service :8083<br/>Click tracking • Bloom filter"]
+        AI["ai-service :8084<br/>ReAct agent • MCP server • Classification • Safety"]
     end
 
-    PG1[("Postgres<br/>minima-AI_auth")]
-    PG2[("Postgres<br/>minima-AI_urls")]
-    PG3[("Postgres<br/>minima-AI_analytics")]
-    RedisDB[("Redis 7<br/>cache â€¢ rate limit â€¢ bloom filter â€¢ API keys")]
+    PG1[("Postgres<br/>minima_ai_auth")]
+    PG2[("Postgres<br/>minima_ai_urls")]
+    PG3[("Postgres<br/>minima_ai_analytics")]
+    RedisDB[("Redis 7<br/>cache • rate limit • bloom filter • API keys")]
     Kafka{{"Apache Kafka"}}
     Obs["Prometheus + Grafana<br/>metrics & dashboards"]
     MCP[("Claude Desktop<br/>via MCP")]
@@ -287,7 +287,7 @@ graph TB
     Gateway -.->|/actuator/prometheus| Obs
 ```
 
-**Event flow example:** shortening a URL triggers `url.created` â†’ consumed by both `analytics-service` (initializes click counters) and `ai-service` (classifies the URL via LLM, generates a title, runs a safety check) â†’ `ai-service` publishes `url.classified` â†’ consumed back by `url-service` to persist the AI-generated title/category/safety flag. Fully async, fully decoupled - a real SAGA choreography, not a hardcoded call chain.
+**Event flow example:** shortening a URL triggers `url.created` → consumed by both `analytics-service` (initializes click counters) and `ai-service` (classifies the URL via LLM, generates a title, runs a safety check) → `ai-service` publishes `url.classified` → consumed back by `url-service` to persist the AI-generated title/category/safety flag. Fully async, fully decoupled - a real SAGA choreography, not a hardcoded call chain.
 
 <details>
 <summary><strong>Observability pipeline</strong> (traces + logs + metrics, click to expand)</summary>
@@ -313,7 +313,7 @@ Every span is tagged with a trace ID that also lands in the structured JSON logs
 
 ---
 
-## ðŸš€ One command, full stack
+## 🚀 One command, full stack
 
 ```bash
 git clone https://github.com/Mrillogical/minima-ai.git
@@ -337,7 +337,7 @@ That's it, **17 containers**, fully wired:
 
 Loki and Tempo don't need direct browsing - they're auto-provisioned as Grafana datasources, so logs and traces are queried straight from the Grafana Explore tab.
 
-All 6 services build from multi-stage Dockerfiles (`eclipse-temurin:25-jdk` â†’ `eclipse-temurin:25-jre`), register with Eureka on startup, and expose `/actuator/prometheus` for metrics scraping out of the box.
+All 6 services build from multi-stage Dockerfiles (`eclipse-temurin:25-jdk` → `eclipse-temurin:25-jre`), register with Eureka on startup, and expose `/actuator/prometheus` for metrics scraping out of the box.
 
 **Try it in 10 seconds once it's up:**
 
@@ -359,7 +359,7 @@ curl -L http://localhost:8082/r/<slug>
 
 ---
 
-## ðŸ“˜ API Docs (Swagger / OpenAPI)
+## 📘 API Docs (Swagger / OpenAPI)
 
 Every service ships full OpenAPI 3.1 docs via [springdoc-openapi](https://springdoc.org/), aggregated into a single Swagger UI at the gateway:
 
@@ -374,7 +374,7 @@ Every service ships full OpenAPI 3.1 docs via [springdoc-openapi](https://spring
 
 ---
 
-## âœ¨ Key Features
+## ✨ Key Features
 
 | Category              | What's implemented                                                                                                                                                                                    |
 |-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -394,7 +394,7 @@ Every service ships full OpenAPI 3.1 docs via [springdoc-openapi](https://spring
 
 ---
 
-## ðŸ“Š Observability
+## 📊 Observability
 
 Every service exposes a `/actuator/prometheus` endpoint, ships structured JSON logs to Loki via Promtail, and exports OpenTelemetry traces through a shared OTel Collector into Tempo. Grafana comes auto-provisioned with `docker compose up` - metrics, logs, and traces are all queryable from one place, correlated by trace ID.
 
@@ -412,22 +412,22 @@ The included Grafana dashboard covers:
 
 Beyond dashboards, Grafana's **Explore** tab lets you jump from a metric spike straight into the exact distributed trace (Tempo) and the exact log lines across every service it touched (Loki) - no manual timestamp-matching across three separate tools.
 
-![minima-AI_grafana.png](docs/grafana.png)
+![](docs/grafana.png)
 
 ---
 
-## ðŸ›¡ï¸ Resilience
+## 🛡️ Resilience
 
 Two layers of circuit breakers, both Resilience4j, both Spring Boot 4 native:
 
-- **`ai-service` â†’ `url-service` / `analytics-service`** - `@CircuitBreaker` + `@Retry` + `@TimeLimiter` on `CompletableFuture`-returning ops methods, backed by explicit `readTimeout` on the underlying RestClient (shorter than the TimeLimiter window) so cancellation is real, not just cosmetic. 4xx responses pass through untouched; connection failures and 5xx trip the breaker and trigger a friendly fallback the agent relays in plain English.
-- **`api-gateway` â†’ all 4 downstream services** - declarative `CircuitBreaker` route filters per service, with per-service-tuned thresholds (LLM-backed `ai-service` gets longer slow-call/timeout windows than CRUD services) and a dedicated `FallbackController` returning structured `503` JSON instead of hangs or raw stack traces.
+- **`ai-service` → `url-service` / `analytics-service`** - `@CircuitBreaker` + `@Retry` + `@TimeLimiter` on `CompletableFuture`-returning ops methods, backed by explicit `readTimeout` on the underlying RestClient (shorter than the TimeLimiter window) so cancellation is real, not just cosmetic. 4xx responses pass through untouched; connection failures and 5xx trip the breaker and trigger a friendly fallback the agent relays in plain English.
+- **`api-gateway` → all 4 downstream services** - declarative `CircuitBreaker` route filters per service, with per-service-tuned thresholds (LLM-backed `ai-service` gets longer slow-call/timeout windows than CRUD services) and a dedicated `FallbackController` returning structured `503` JSON instead of hangs or raw stack traces.
 
 A recurring correctness pattern enforced across every service: any Redis write or delete that happens inside a `@Transactional` method is deferred to `TransactionSynchronizationManager.afterCommit()`, never fired eagerly mid-transaction. If the database transaction rolls back after an eager Redis write, the cache silently drifts from the source of truth with no error raised - the kind of bug that only shows up under real concurrent load, not in a manual test.
 
 ---
 
-## ðŸ› ï¸ Tech Stack
+## 🛠️ Tech Stack
 
 | Layer                  | Technology                                                                          |
 |--------------------------|--------------------------------------------------------------------------------------|
@@ -450,7 +450,7 @@ A recurring correctness pattern enforced across every service: any Redis write o
 
 ---
 
-## ðŸ“¡ Services at a Glance
+## 📡 Services at a Glance
 
 | Service              | Port | Responsibility                                                                                              |
 |-----------------------|------|----------------------------------------------------------------------------------------------------------------|
@@ -463,49 +463,49 @@ A recurring correctness pattern enforced across every service: any Redis write o
 
 ---
 
-## ðŸ“‚ Project Structure
+## 📂 Project Structure
 
 ```
-minima-AI/
-â”œâ”€â”€ docker-compose.yml          # full 17-container stack
-â”œâ”€â”€ observability/
-â”‚   â”œâ”€â”€ prometheus/
-â”‚   â”œâ”€â”€ grafana/provisioning/   # auto-provisioned datasources + dashboard
-â”‚   â”œâ”€â”€ loki/
-â”‚   â”œâ”€â”€ promtail/
-â”‚   â”œâ”€â”€ otel-collector/
-â”‚   â””â”€â”€ tempo/
-â”œâ”€â”€ eureka-server/
-â”œâ”€â”€ api-gateway/                 # routing, auth, rate limiting, circuit breakers, Swagger aggregation
-â”œâ”€â”€ auth-service/
-â”‚   â””â”€â”€ src/main/java/com/minima-AI/auth/
-â”‚       â”œâ”€â”€ authentication/       # login, register, refresh, logout, verify
-â”‚       â”œâ”€â”€ password/             # forgot/reset password
-â”‚       â”œâ”€â”€ apikey/                # MCP API key generation + revocation
-â”‚       â””â”€â”€ token/                 # refresh token lifecycle
-â”œâ”€â”€ url-service/
-â”‚   â””â”€â”€ src/main/java/com/minima-AI/url/
-â”‚       â”œâ”€â”€ shortening/           # Base62, core CRUD
-â”‚       â”œâ”€â”€ redirect/              # Public redirect endpoint
-â”‚       â”œâ”€â”€ expiry/                # Scheduled cleanup
-â”‚       â”œâ”€â”€ consumer/              # Consumes AI classification results
-â”‚       â”œâ”€â”€ dlq/                    # Dead-letter-queue retry
-â”‚       â””â”€â”€ events/                  # Kafka event records
-â”œâ”€â”€ analytics-service/           # Click tracking, Bloom filter, rollups
-â””â”€â”€ ai-service/
-    â””â”€â”€ src/main/java/com/minima-AI/ai/
-        â”œâ”€â”€ agent/                # ChatClient + @Tool methods (circuit-breaker protected)
-        â”œâ”€â”€ mcp/                    # MCP server tools + API key auth filter
-        â”œâ”€â”€ classification/        # AI title/category/safety pipeline
-        â”œâ”€â”€ slug/                    # AI slug suggestions
-        â””â”€â”€ summary/                  # AI-generated analytics summaries
+Minima-AI/
+├── docker-compose.yml          # full 17-container stack
+├── observability/
+│   ├── prometheus/
+│   ├── grafana/provisioning/   # auto-provisioned datasources + dashboard
+│   ├── loki/
+│   ├── promtail/
+│   ├── otel-collector/
+│   └── tempo/
+├── eureka-server/
+├── api-gateway/                 # routing, auth, rate limiting, circuit breakers, Swagger aggregation
+├── auth-service/
+│   └── src/main/java/com/shortlyai/auth/
+│       ├── authentication/       # login, register, refresh, logout, verify
+│       ├── password/             # forgot/reset password
+│       ├── apikey/                # MCP API key generation + revocation
+│       └── token/                 # refresh token lifecycle
+├── url-service/
+│   └── src/main/java/com/shortlyai/url/
+│       ├── shortening/           # Base62, core CRUD
+│       ├── redirect/              # Public redirect endpoint
+│       ├── expiry/                # Scheduled cleanup
+│       ├── consumer/              # Consumes AI classification results
+│       ├── dlq/                    # Dead-letter-queue retry
+│       └── events/                  # Kafka event records
+├── analytics-service/           # Click tracking, Bloom filter, rollups
+└── ai-service/
+    └── src/main/java/com/shortlyai/ai/
+        ├── agent/                # ChatClient + @Tool methods (circuit-breaker protected)
+        ├── mcp/                    # MCP server tools + API key auth filter
+        ├── classification/        # AI title/category/safety pipeline
+        ├── slug/                    # AI slug suggestions
+        └── summary/                  # AI-generated analytics summaries
 ```
 
 Every service follows **feature-based packaging** - each feature folder contains its own controller, service, repository, and DTOs. No layer-based `controllers/`, `services/`, `repositories/` folders.
 
 ---
 
-## ðŸ—ºï¸ Project Status
+## 🗺️ Project Status
 
 - [x] `eureka-server` - service discovery for all 5 business services
 - [x] `auth-service` - JWT, OAuth2 Google, refresh tokens, forgot/reset password, audit logging, MCP API keys
@@ -523,7 +523,7 @@ Every service follows **feature-based packaging** - each feature folder contains
 
 ---
 
-## ðŸ”­ What's Next
+## 🔭 What's Next
 
 <details>
 <summary><strong>Known gaps and planned work</strong> (click to expand)</summary>
@@ -538,7 +538,7 @@ Every service follows **feature-based packaging** - each feature folder contains
 
 ---
 
-## ðŸ§  Engineering Highlights
+## 🧠 Engineering Highlights
 
 - **Event-driven SAGA choreography** - URL creation triggers a chain of independent Kafka consumers (analytics initialization, AI classification, result persistence) with no central orchestrator. A real choreography pattern, not a distributed monolith.
 
@@ -558,17 +558,17 @@ Every service follows **feature-based packaging** - each feature folder contains
 
 ---
 
-## ðŸ“„ License
+## 📄 License
 
 MIT - see [LICENSE](LICENSE)
 
 ---
 
-## ðŸ‘¤ Author
+## 👤 Author
 
 Built by **Kunal Singh Yadav** as a portfolio project targeting production-grade microservices practices.
 
 - LinkedIn: [Kunal Singh Yadav](https://www.linkedin.com/in/kunal-singh-yadav/)
 
-â­ **Found this useful, interesting, or just well over-engineered for a URL shortener? Star the repo, it genuinely helps and costs you two seconds.**
+⭐ **Found this useful, interesting, or just well over-engineered for a URL shortener? Star the repo, it genuinely helps and costs you two seconds.**
 
