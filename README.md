@@ -23,12 +23,6 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](#)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-## 🎬 Demo
-
-> Claude AI MCP walkthrough
-
-![minima-ai_mcp.gif](docs/MCP.gif)
-
 ---
 
 ## 📑 Table of Contents
@@ -38,7 +32,6 @@
 - [Use it from Claude Desktop (MCP)](#-use-it-from-claude-desktop-mcp)
 - [Architecture](#️-architecture)
 - [One Command, Full Stack](#-one-command-full-stack)
-- [API Docs (Swagger)](#-api-docs-swaggeropenapi)
 - [Key Features](#-key-features)
 - [Observability](#-observability)
 - [Resilience](#️-resilience)
