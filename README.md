@@ -551,15 +551,20 @@ Every service follows **feature-based packaging** - each feature folder contains
 
 ---
 
-## 📄 License
+## 👤 Author
 
-MIT - see [LICENSE](LICENSE)
+**Kunal Singh Yadav** — Java Backend Developer
+Building production-grade systems, not tutorial apps.
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?logo=linkedin)](https://www.linkedin.com/in/kunal-singh-yadav)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?logo=github)](https://github.com/Mrillogical)
+[![Email](https://img.shields.io/badge/Email-Contact-red?logo=gmail)](mailto:kunalsy24@gmail.com)
 
 ---
 
-## 👤 Author
+## 📄 License
 
-Built by **Kunal Singh Yadav** as a portfolio project targeting production-grade microservices practices.
+MIT — built for portfolio and learning purposes.
 
 - LinkedIn: [Kunal Singh Yadav](https://www.linkedin.com/in/kunal-singh-yadav/)
 
