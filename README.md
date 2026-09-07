@@ -565,8 +565,5 @@ Building production-grade systems, not tutorial apps.
 ## 📄 License
 
 MIT — built for portfolio and learning purposes.
-
-- LinkedIn: [Kunal Singh Yadav](https://www.linkedin.com/in/kunal-singh-yadav/)
-
 ⭐ **Found this useful, interesting, or just well over-engineered for a URL shortener? Star the repo, it genuinely helps and costs you two seconds.**
 
